@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploy the get generic secret module
+
+Parameters:
+  S3Bucket:
+    Description: The S3 bucket where the code is kept
+    Type: String
+    Default:
+      drakeworld-cf
+  S3Key:
+    Description: The S3 key of the file
+    Type: String
+    Default:
+      aws-get-secret.zip
+
+Resources:
+  Function:
+    Type: AWS::Lambda::Function
+    Properties: 
+      Code: 
+        S3Bucket: !Ref S3Bucket
+        S3Key: !Ref S3Key
+      Description: Get a secret from Secrets Manager
+      Handler: index.handler
+      Role: !GetAtt RootRole.Arn
+      Runtime: nodejs14.x
+  
+
+  RootRole:
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: wordpress-get-gen-secret
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 'secretsmanager:GetSecretValue'
+                Resource: !Sub "arn:aws:secretsmanager:*:${AWS::AccountId}:secret:*"
